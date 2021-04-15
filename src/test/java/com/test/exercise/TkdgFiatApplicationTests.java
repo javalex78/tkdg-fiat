@@ -11,8 +11,6 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import org.junit.jupiter.api.AfterEach;
@@ -247,47 +245,6 @@ class TkdgFiatApplicationTests {
 			.andExpect(status().isOk()).andExpect(MockMvcResultMatchers.content().string(""));
 	}
 	
-	@Test
-	public void testInitProper() throws Exception {
-		System.out.println("Fill DB with generated quotes..");
-		
-		Map<String, Quote> qm = new HashMap<>();
-		for(int i = 0; i < 3; i++) {
-			QuoteHistory qh = generateRandomQuoteHistory();
-			repository.save(qh);
-			qm.put(qh.getQuote().getIsin(), qh.getQuote());
-			try {
-				Thread.currentThread().sleep(200);
-			} catch (InterruptedException e) {}
-		}
-		
-		for(int i = 0; i < 3; i++) {
-			for(Quote quote: qm.values()) {
-				Quote newQuote = generateNewQuotePriceGoLower(quote, new BigDecimal("0.40"));
-				QuoteHistory qh = new QuoteHistory(newQuote);
-				repository.save(qh);
-				qm.put(newQuote.getIsin(), newQuote);
-				try {
-					Thread.currentThread().sleep(200);
-				} catch (InterruptedException e) {}
-			}
-		}
-		
-		for(int i = 0; i < 3; i++) {
-			for(Quote quote: qm.values()) {
-				Quote newQuote = generateNewQuotePriceGoHigher(quote, new BigDecimal("0.50"));				
-				QuoteHistory qh = new QuoteHistory(newQuote);
-				repository.save(qh);
-				qm.put(newQuote.getIsin(), newQuote);
-				try {
-					Thread.currentThread().sleep(200);
-				} catch (InterruptedException e) {}
-			}
-		}
-		
-		
-	}
-	
 	private String generateIsin() {
 		String start = "RU000";
 		String sample = "QWERTYUIOPASDFGHJKLZXCVBNM0123456789";
@@ -318,20 +275,6 @@ class TkdgFiatApplicationTests {
 		Quote quote = generateRandomQuote();
 		QuoteHistory qh = new QuoteHistory(quote);
 		return qh;
-	}
-	
-	private Quote generateNewQuotePriceGoLower(Quote quote, BigDecimal subtrahend) {
-		String isin = quote.getIsin();
-		Quote newQuote = new Quote(isin, quote.getBid().subtract(subtrahend), quote.getAsk().subtract(subtrahend));				
-		newQuote.setElvl( quoteHandler.calculateElvlForNewQuote( newQuote, quoteHandler.getActualElvlByIsin(isin) ) );
-		return newQuote;
-	}
-	
-	private Quote generateNewQuotePriceGoHigher(Quote quote, BigDecimal augend) {
-		String isin = quote.getIsin();
-		Quote newQuote = new Quote(isin, quote.getBid().add(augend), quote.getAsk().add(augend));				
-		newQuote.setElvl( quoteHandler.calculateElvlForNewQuote( newQuote, quoteHandler.getActualElvlByIsin(isin) ) );
-		return newQuote;
 	}
 	
 	@BeforeEach
